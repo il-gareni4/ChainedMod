@@ -20,6 +20,9 @@ public class Chained : Mod
     private void PostSpawn(On_Player.orig_Spawn orig, Player self, PlayerSpawnContext context)
     {
         orig(self, context);
-        self.GetModPlayer<ChainedPlayer>()?.PostSpawn(context);
+        if (context == PlayerSpawnContext.RecallFromItem)
+            self.GetModPlayer<ChainedPlayer>().PostRecall(context);
+        else if (context == PlayerSpawnContext.ReviveFromDeath)
+            self.GetModPlayer<ChainedPlayer>().PostRespawn(context);
     }
 }

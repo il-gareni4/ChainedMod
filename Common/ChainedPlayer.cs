@@ -137,8 +137,9 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             player.Player.KillMe(PlayerDeathReason.ByCustomReason(TeamWipeReason), player.Player.statLife, 0, pvp);
     }
 
-    public virtual void PostSpawn(PlayerSpawnContext context) {
-        if (!ChainedPlayers.Any() || context != PlayerSpawnContext.ReviveFromDeath)
+    public virtual void PostRespawn(PlayerSpawnContext context)
+    {
+        if (!ChainedPlayers.Any())
             return;
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
@@ -157,6 +158,12 @@ public class ChainedPlayer : ModPlayer, IJointEntity
         else if (config.OnRespawn == OnRespawnAction.AliveToRespawned)
             foreach (ChainedPlayer player in ChainedPlayers.Where(player => player.IsActive))
                 player.Center = Player.Center;
+    }
+
+    public virtual void PostRecall(PlayerSpawnContext context)
+    {
+        foreach (ChainedPlayer player in ChainedPlayers.Where(player => player.IsActive))
+            player.Center = Player.Center;
     }
 
     public override void PreUpdateMovement()
