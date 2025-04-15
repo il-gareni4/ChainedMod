@@ -137,6 +137,28 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             player.Player.KillMe(PlayerDeathReason.ByCustomReason(TeamWipeReason), player.Player.statLife, 0, pvp);
     }
 
+    public virtual void PostSpawn(PlayerSpawnContext context) {
+        if (!ChainedPlayers.Any() || context != PlayerSpawnContext.ReviveFromDeath)
+            return;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnDeath == OnDeathAction.TeamWipe)
+            return;
+
+        if (config.OnRespawn == OnRespawnAction.RespawnedToAlive)
+        {
+            try
+            {
+                ChainedPlayer teleportTo = ChainedPlayers.First(player => player.IsActive);
+                Player.Center = teleportTo.Center;
+            }
+            catch (ArgumentNullException) { }
+        }
+        else if (config.OnRespawn == OnRespawnAction.AliveToRespawned)
+            foreach (ChainedPlayer player in ChainedPlayers.Where(player => player.IsActive))
+                player.Center = Player.Center;
+    }
+
     public override void PreUpdateMovement()
     {
         UpdateChain();

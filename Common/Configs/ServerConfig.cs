@@ -27,5 +27,8 @@ namespace Chained.Common
         
         [DefaultValue(OnDeathAction.TeamWipe)]
         public OnDeathAction OnDeath { get; set; }
+
+        [DefaultValue(OnRespawnAction.RespawnedToAlive)]
+        public OnRespawnAction OnRespawn { get; set; }
     }
 }
