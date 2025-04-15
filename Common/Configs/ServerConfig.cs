@@ -9,17 +9,20 @@ namespace Chained.Common
     {
         public override ConfigScope Mode => ConfigScope.ServerSide;
 
-        [Header("General")]
+        [Header("ChainSettings")]
         [Range(50f, 1000f)]
         [DefaultValue(250f)]
         public float ChainLength { get; set; }
 
-        [Header("SharedStats")]
+        [Header("Stats")]
         [DefaultValue(HealthMode.Average)]
         public HealthMode HealthMode { get; set; }
         
         [DefaultValue(ManaMode.Average)]
         public ManaMode ManaMode { get; set; }
-        
+
+        [Header("Actions")]
+        [DefaultValue(OnHurtAction.Full)]
+        public OnHurtAction OnHurt { get; set; }
     }
 }

@@ -9,11 +9,15 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Chained.Common.Configs.Enums;
+using Terraria.DataStructures;
+using Terraria.Localization;
 
 namespace Chained.Common;
 
 public class ChainedPlayer : ModPlayer, IJointEntity
 {
+    public static readonly NetworkText SharedDamageReason = NetworkText.FromLiteral("Shared damage");
+
     public Vector2 Position { get => Player.position; set => Player.position = value; }
     public Vector2 Center { get => Player.Center; set => Player.Center = value; }
     public Vector2 Velocity { get => Player.velocity; set => Player.velocity = value; }
@@ -81,6 +85,40 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             default:
                 break;
         }
+    }
+
+    public override void OnHurt(Player.HurtInfo info)
+    {
+        if (!ChainedPlayers.Any() ||
+            info.DamageSource.CustomReason?.ToString() == SharedDamageReason.ToString() ||
+            Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnHurt == OnHurtAction.Individual)
+            return;
+
+        foreach (ChainedPlayer player in ChainedPlayers)
+            player.Player.Hurt(new Player.HurtInfo()
+            {
+                DamageSource = PlayerDeathReason.ByCustomReason(SharedDamageReason),
+                Damage = info.Damage,
+                PvP = info.PvP,
+                CooldownCounter = info.CooldownCounter,
+                Dodgeable = info.Dodgeable
+            }, true);
+    }
+
+    public override void ModifyHurt(ref Player.HurtModifiers modifiers)
+    {
+        if (!ChainedPlayers.Any() ||
+            modifiers.DamageSource.CustomReason?.ToString() == SharedDamageReason.ToString() ||
+            Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnHurt == OnHurtAction.Shared)
+            modifiers.FinalDamage *= 1f / (ChainedPlayers.Count() + 1);
     }
 
     public override void PreUpdateMovement()
