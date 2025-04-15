@@ -30,5 +30,9 @@ namespace Chained.Common
 
         [DefaultValue(OnRespawnAction.RespawnedToAlive)]
         public OnRespawnAction OnRespawn { get; set; }
+
+        [Header("Misc")]
+        [DefaultValue(true)]
+        public bool MoreFrequentSync { get; set; }
     }
 }

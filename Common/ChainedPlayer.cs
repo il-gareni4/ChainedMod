@@ -188,6 +188,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
         float maxLength = config.ChainLength;
+        bool needToSync = false;
         foreach (IJointEntity player in ChainedTo.Where(player => player.IsActive))
         {
             Vector2 directionToThis = Vector2.Normalize(Player.Center - player.Center);
@@ -217,18 +218,27 @@ public class ChainedPlayer : ModPlayer, IJointEntity
                 // Recalculate directions
                 directionToThis = Vector2.Normalize(Player.Center - player.Center);
                 directionToOther = Vector2.Normalize(player.Center - Player.Center);
+
+                if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer)
+                    needToSync = true;
             }
 
             Vector2 chainCenter = player.Center + (Player.Center - player.Center) / 2f;
             float futureDistance = Vector2.Distance(Player.Center + Player.velocity, player.Center + player.Velocity);
             if (futureDistance > maxLength)
             {
-                IntersectionResult(this, chainCenter, maxLength / 2f, out Vector2 thisResultVelocity, out float thisTransferVelocity);
-                IntersectionResult(player, chainCenter, maxLength / 2f, out Vector2 otherResultVelocity, out float otherTransferVelocity);
+                bool thisResult = IntersectionResult(this, chainCenter, maxLength / 2f, out Vector2 thisResultVelocity, out float thisTransferVelocity);
+                bool otherResult = IntersectionResult(player, chainCenter, maxLength / 2f, out Vector2 otherResultVelocity, out float otherTransferVelocity);
                 Player.velocity = thisResultVelocity + (directionToOther * otherTransferVelocity);
                 player.Velocity = otherResultVelocity + (directionToThis * thisTransferVelocity);
+
+                if (Main.netMode == NetmodeID.MultiplayerClient && Player.whoAmI == Main.myPlayer && (thisResult || otherResult))
+                    needToSync = true;
             }
         }
+
+        if (config.MoreFrequentSync && needToSync)
+            NetMessage.SendData(MessageID.PlayerControls, -1, -1, null, Player.whoAmI);
     }
 
     private Vector2? VectorCircleIntersection(Vector2 pos, Vector2 vec, float rad)
