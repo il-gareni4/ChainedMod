@@ -44,35 +44,6 @@ public class ChainedPlayer : ModPlayer, IJointEntity
         UpdateChain();
     }
 
-    public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
-    {
-        ServerConfig config = ModContent.GetInstance<ServerConfig>();
-        Texture2D tex = TextureAssets.Chain.Value;
-
-        foreach (IJointEntity player in ChainedTo)
-        {
-            if (player is ChainedPlayer chainedPlayer && chainedPlayer.Player.whoAmI <= Player.whoAmI)
-                return;
-
-            float distance = Player.Distance(player.Center);
-            Vector2 center = player.Center + (Player.Center - player.Center) / 2f;
-            int totalSegments = (int)(config.ChainLength / tex.Width);
-
-            for (int i = 0; i < totalSegments; i++)
-            {
-                float dangleAmount = 1f - distance / config.ChainLength;
-                Vector2 p0 = Player.Center;
-                Vector2 p1 = center + Vector2.UnitY * 150f * dangleAmount;
-                Vector2 p2 = player.Center;
-
-                Vector2 position = Bezier(p0, p1, p2, (float)i / totalSegments);
-                float rotation = BezierAngle(p0, p1, p2, (float)i / totalSegments) + float.Pi / 2;
-
-                Main.spriteBatch.Draw(tex, position - Main.screenPosition, null, Color.White, rotation, new Vector2(0.5f, 0.5f), 1f, SpriteEffects.None, 0f);
-            }
-        }
-    }
-
     public Vector2 TileCollision(Vector2 position, Vector2 velocity)
     {
         return Collision.TileCollision(position, velocity, Player.width, Player.height);
@@ -201,17 +172,5 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             transferVelocity = 0f;
             return false;
         }
-    }
-
-    private Vector2 Bezier(Vector2 p0, Vector2 p1, Vector2 p2, float t)
-    {
-        return Vector2.Lerp(Vector2.Lerp(p0, p1, t), Vector2.Lerp(p1, p2, t), t);
-    }
-
-    private float BezierAngle(Vector2 p0, Vector2 p1, Vector2 p2, float t)
-    {
-        Vector2 ip0 = Vector2.Lerp(p0, p1, t);
-        Vector2 ip1 = Vector2.Lerp(p1, p2, t);
-        return (float)Math.Atan2(ip1.Y - ip0.Y, ip1.X - ip0.X);
     }
 }
