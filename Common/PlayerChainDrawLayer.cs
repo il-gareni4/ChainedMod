@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Chained.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,18 +16,16 @@ public class PlayerChainDrawLayer : PlayerDrawLayer
 
     protected override void Draw(ref PlayerDrawSet drawInfo)
     {
-        if (drawInfo.shadow != 0f)
+        if (drawInfo.shadow != 0f || drawInfo.drawPlayer.dead)
             return;
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
         ChainedPlayer me = drawInfo.drawPlayer.GetModPlayer<ChainedPlayer>();
         Texture2D tex = TextureAssets.Chain.Value;
 
-        foreach (IJointEntity chainedTo in me.ChainedTo)
+        foreach (IJointEntity chainedTo in me.ChainedPlayers.Where(chainedTo =>
+            chainedTo.IsActive && me.Player.whoAmI >= chainedTo.Player.whoAmI))
         {
-            if (chainedTo is ChainedPlayer chainedPlayer && me.Player.whoAmI >= chainedPlayer.Player.whoAmI)
-                return;
-
             float distance = me.Player.Distance(chainedTo.Center);
             Vector2 center = chainedTo.Center + (me.Player.Center - chainedTo.Center) / 2f;
             int totalSegments = (int)(config.ChainLength / tex.Width);

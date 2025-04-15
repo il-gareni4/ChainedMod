@@ -19,6 +19,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
     public static readonly NetworkText SharedDamageReason = NetworkText.FromLiteral("Shared damage");
     public static readonly NetworkText TeamWipeReason = NetworkText.FromLiteral("Team wipe");
 
+    public bool IsActive => Player.active && !Player.dead;
     public Vector2 Position { get => Player.position; set => Player.position = value; }
     public Vector2 Center { get => Player.Center; set => Player.Center = value; }
     public Vector2 Velocity { get => Player.velocity; set => Player.velocity = value; }
@@ -148,6 +149,9 @@ public class ChainedPlayer : ModPlayer, IJointEntity
 
     private void UpdateChain()
     {
+        if (!IsActive)
+            return;
+
         // When player try to move outside of the chain length, we need to find the intersection point of the vector and the circle.
         // Amount of vector transferred to the other player is the amount of vector that is outside of the circle
         // Multiplied by dot product of normal vector in intersection point and velocity vector.
@@ -155,7 +159,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
         float maxLength = config.ChainLength;
-        foreach (IJointEntity player in ChainedTo)
+        foreach (IJointEntity player in ChainedTo.Where(player => player.IsActive))
         {
             Vector2 directionToThis = Vector2.Normalize(Player.Center - player.Center);
             Vector2 directionToOther = Vector2.Normalize(player.Center - Player.Center);
