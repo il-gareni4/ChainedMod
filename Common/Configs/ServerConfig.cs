@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using Chained.Common.Configs.Enums;
 using Terraria.ModLoader.Config;
 
 namespace Chained.Common
@@ -12,5 +13,13 @@ namespace Chained.Common
         [Range(50f, 1000f)]
         [DefaultValue(250f)]
         public float ChainLength { get; set; }
+
+        [Header("SharedStats")]
+        [DefaultValue(HealthMode.Average)]
+        public HealthMode HealthMode { get; set; }
+        
+        [DefaultValue(ManaMode.Average)]
+        public ManaMode ManaMode { get; set; }
+        
     }
 }

@@ -8,14 +8,7 @@ using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.WorldBuilding;
-using log4net.Appender;
-using Newtonsoft.Json.Bson;
-using Terraria.DataStructures;
-using Terraria.GameContent;
-using Terraria.GameInput;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
+using Chained.Common.Configs.Enums;
 
 namespace Chained.Common;
 
@@ -30,12 +23,63 @@ public class ChainedPlayer : ModPlayer, IJointEntity
         .Where(player => player.whoAmI != Player.whoAmI && player.team == Player.team)
         .Select(player => player.GetModPlayer<ChainedPlayer>());
 
+    public IEnumerable<ChainedPlayer> ChainedPlayers =>
+        CommonMain.ActivePlayers
+        .Where(player => player.whoAmI != Player.whoAmI && player.team == Player.team)
+        .Select(player => player.GetModPlayer<ChainedPlayer>());
+
+    public int UnmodifiedLifeMax { get; private set; }
+    public int UnmodifiedManaMax { get; private set; }
+
     public override void OnEnterWorld()
     {
         if (Main.netMode != NetmodeID.MultiplayerClient)
         {
             Main.NewText($"[{Mod.DisplayName}] It is recommended to disable this mod in singleplayer.", Colors.RarityDarkRed);
             return;
+        }
+    }
+
+    public override void PostUpdateEquips()
+    {
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        UnmodifiedLifeMax = Player.statLifeMax2;
+        UnmodifiedManaMax = Player.statManaMax2;
+
+        switch (config.HealthMode)
+        {
+            case HealthMode.Combined:
+                Player.statLifeMax2 += ChainedPlayers.Sum(player => player.UnmodifiedLifeMax);
+                break;
+            case HealthMode.Minimum:
+                Player.statLifeMax2 = ChainedPlayers.Select(player => player.UnmodifiedLifeMax).Append(UnmodifiedLifeMax).Min();
+                break;
+            case HealthMode.Maximum:
+                Player.statLifeMax2 = ChainedPlayers.Select(player => player.UnmodifiedLifeMax).Append(UnmodifiedLifeMax).Max();
+                break;
+            case HealthMode.Average:
+                Player.statLifeMax2 = (int)ChainedPlayers.Select(player => player.UnmodifiedLifeMax).Append(UnmodifiedLifeMax).Average();
+                break;
+            default:
+                break;
+        }
+
+        switch (config.ManaMode)
+        {
+            case ManaMode.Combined:
+                Player.statManaMax2 += ChainedPlayers.Sum(player => player.UnmodifiedManaMax);
+                break;
+            case ManaMode.Minimum:
+                Player.statManaMax2 = ChainedPlayers.Select(player => player.UnmodifiedManaMax).Append(UnmodifiedManaMax).Min();
+                break;
+            case ManaMode.Maximum:
+                Player.statManaMax2 = ChainedPlayers.Select(player => player.UnmodifiedManaMax).Append(UnmodifiedManaMax).Max();
+                break;
+            case ManaMode.Average:
+                Player.statManaMax2 = (int)ChainedPlayers.Select(player => player.UnmodifiedManaMax).Append(UnmodifiedManaMax).Average();
+                break;
+            default:
+                break;
         }
     }
 
