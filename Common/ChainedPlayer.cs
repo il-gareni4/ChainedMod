@@ -17,6 +17,7 @@ namespace Chained.Common;
 public class ChainedPlayer : ModPlayer, IJointEntity
 {
     public static readonly NetworkText SharedDamageReason = NetworkText.FromLiteral("Shared damage");
+    public static readonly NetworkText TeamWipeReason = NetworkText.FromLiteral("Team wipe");
 
     public Vector2 Position { get => Player.position; set => Player.position = value; }
     public Vector2 Center { get => Player.Center; set => Player.Center = value; }
@@ -119,6 +120,20 @@ public class ChainedPlayer : ModPlayer, IJointEntity
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
         if (config.OnHurt == OnHurtAction.Shared)
             modifiers.FinalDamage *= 1f / (ChainedPlayers.Count() + 1);
+    }
+
+    public override void Kill(double damage, int hitDirection, bool pvp, PlayerDeathReason damageSource)
+    {
+        if (!ChainedPlayers.Any() ||
+            Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnDeath == OnDeathAction.Individual)
+            return;
+
+        foreach (ChainedPlayer player in ChainedPlayers)
+            player.Player.KillMe(PlayerDeathReason.ByCustomReason(TeamWipeReason), player.Player.statLife, 0, pvp);
     }
 
     public override void PreUpdateMovement()

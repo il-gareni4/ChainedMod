@@ -24,5 +24,8 @@ namespace Chained.Common
         [Header("Actions")]
         [DefaultValue(OnHurtAction.Full)]
         public OnHurtAction OnHurt { get; set; }
+        
+        [DefaultValue(OnDeathAction.TeamWipe)]
+        public OnDeathAction OnDeath { get; set; }
     }
 }
