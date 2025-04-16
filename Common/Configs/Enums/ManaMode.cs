@@ -6,5 +6,5 @@ public enum ManaMode
     Minimum,
     Maximum,
     Combined,
-    Individual
+    Unchanged
 }

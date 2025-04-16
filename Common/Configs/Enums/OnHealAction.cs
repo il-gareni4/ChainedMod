@@ -1,6 +1,6 @@
 namespace Chained.Common.Configs.Enums;
 
-public enum OnHurtAction
+public enum OnHealAction
 {
     Full,
     Split,

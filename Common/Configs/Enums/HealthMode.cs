@@ -6,5 +6,5 @@ public enum HealthMode
     Minimum,
     Maximum,
     Combined,
-    Individual
+    Unchanged
 }

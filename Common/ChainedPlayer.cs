@@ -11,6 +11,7 @@ using Terraria.ModLoader;
 using Chained.Common.Configs.Enums;
 using Terraria.DataStructures;
 using Terraria.Localization;
+using Chained.Net;
 
 namespace Chained.Common;
 
@@ -36,6 +37,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
 
     public int UnmodifiedLifeMax { get; private set; }
     public int UnmodifiedManaMax { get; private set; }
+    protected bool _shareHeal = true;
 
     public override void OnEnterWorld()
     {
@@ -97,7 +99,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             return;
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
-        if (config.OnHurt == OnHurtAction.Individual)
+        if (config.OnHurt == OnHurtAction.Unchanged)
             return;
 
         foreach (ChainedPlayer player in ChainedPlayers)
@@ -119,7 +121,7 @@ public class ChainedPlayer : ModPlayer, IJointEntity
             return;
 
         ServerConfig config = ModContent.GetInstance<ServerConfig>();
-        if (config.OnHurt == OnHurtAction.Shared)
+        if (config.OnHurt == OnHurtAction.Split)
             modifiers.FinalDamage *= 1f / (ChainedPlayers.Count() + 1);
     }
 
@@ -135,6 +137,42 @@ public class ChainedPlayer : ModPlayer, IJointEntity
 
         foreach (ChainedPlayer player in ChainedPlayers)
             player.Player.KillMe(PlayerDeathReason.ByCustomReason(TeamWipeReason), player.Player.statLife, 0, pvp);
+    }
+
+    public void NoShareHeal(int amount)
+    {
+        _shareHeal = false;
+        Player.Heal(amount);
+        _shareHeal = true;
+    }
+
+    public virtual void PreHeal(int amount) {}
+
+    public virtual int ModifyHeal(int amount)
+    {
+        if (!_shareHeal ||
+            !ChainedPlayers.Any() ||
+            Main.netMode != NetmodeID.MultiplayerClient)
+            return amount;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnHeal == OnHealAction.Split)
+            return amount / (ChainedPlayers.Count() + 1);
+
+        return amount;
+    }
+
+    public virtual void PostHeal(int amount)
+    {
+        if (Main.netMode != NetmodeID.MultiplayerClient)
+            return;
+
+        ServerConfig config = ModContent.GetInstance<ServerConfig>();
+        if (config.OnHeal == OnHealAction.Unchanged || !_shareHeal)
+            return;
+
+        foreach (ChainedPlayer player in ChainedPlayers.Where(player => player.IsActive))
+            ChainedNetClient.SendHeal(player.Player.whoAmI, amount);
     }
 
     public virtual void PostRespawn(PlayerSpawnContext context)
